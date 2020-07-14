@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>fake_robot_pose</name>
+  <version>0.0.1</version>
+  <description>The fake_robot_pose package</description>
+  <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
+  <license>BSD</license>
+  <author email="spuetz@uos.de">Sebastian Pütz</author>
+  <depend>roscpp</depend>
+  <depend>tf</depend>
+  <depend>geometry_msgs</depend>
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
