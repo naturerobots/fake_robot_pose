@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-  <node pkg="fake_robot_pose" type="fake_robot_pose" name="fake_robot_pose" output="screen" />
-</launch>
