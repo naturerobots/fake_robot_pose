@@ -23,10 +23,8 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& odom_ptr){
   tf2::Stamped<tf2::Transform> robot_pose_tmp;
   tf2::fromMsg(odom_ptr->pose.pose, static_cast<tf2::Transform&>(robot_pose_tmp));
   geometry_msgs::TransformStamped robot_pose = tf2::toMsg(robot_pose_tmp);
-  robot_pose.header.frame_id = "map";
-  robot_pose.child_frame_id = "base_footprint";
-  robot_pose.header.stamp = ros::Time::now();
-  robot_pose.header.seq = seq++;
+  robot_pose.header = odom_ptr->header;
+  robot_pose.child_frame_id = odom_ptr->child_frame_id;
   broadcaster_ptr->sendTransform(robot_pose);
 }
 
@@ -41,7 +39,7 @@ int main(int argc, char** argv){
 
   seq = 0;
   broadcaster_ptr = boost::make_shared<tf2_ros::TransformBroadcaster>();
-  ros::Subscriber sub = nh.subscribe("gazebo_odom", 100, odomCallback);
+  ros::Subscriber sub = nh.subscribe("gazebo_odom", 0, odomCallback);
   ros::spin();
 
 }
