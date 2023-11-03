@@ -28,10 +28,12 @@ void meshGoalCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& goa
   has_received_mesh_goal_pose = true;
   RCLCPP_INFO(node_ptr->get_logger(), "Got robot pose");
 
-  tf2::Stamped<tf2::Transform> robot_pose_tmp;
-  tf2::fromMsg(*goal_ptr, robot_pose_tmp);  // TODO missing specialization? what to do here...
-  robot_pose = tf2::toMsg(robot_pose_tmp);
-  tf2::fromMsg(goal_ptr->pose.position, robot_pose.transform.translation);
+  robot_pose.header = goal_ptr->header;
+  robot_pose.transform.rotation = goal_ptr->pose.orientation;
+  robot_pose.transform.translation.x = goal_ptr->pose.position.x;
+  robot_pose.transform.translation.y = goal_ptr->pose.position.y;
+  robot_pose.transform.translation.z = goal_ptr->pose.position.z;
+  robot_pose.header = goal_ptr->header;
   robot_pose.child_frame_id = "base_footprint";
 }
 
