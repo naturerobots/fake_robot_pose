@@ -13,9 +13,9 @@ size_t seq;
 ros::Time last_call;
 ros::Duration freq;
 
-void odomCallback(const nav_msgs::Odometry::ConstPtr& odom_ptr){
-
-  if(ros::Time::now() - last_call < freq)
+void odomCallback(const nav_msgs::Odometry::ConstPtr& odom_ptr)
+{
+  if (ros::Time::now() - last_call < freq)
     return;
   else
     last_call = ros::Time::now();
@@ -28,8 +28,8 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& odom_ptr){
   broadcaster_ptr->sendTransform(robot_pose);
 }
 
-int main(int argc, char** argv){
-
+int main(int argc, char** argv)
+{
   ros::init(argc, argv, "odom_robot_pose");
   ros::NodeHandle nh;
 
@@ -41,5 +41,4 @@ int main(int argc, char** argv){
   broadcaster_ptr = boost::make_shared<tf2_ros::TransformBroadcaster>();
   ros::Subscriber sub = nh.subscribe("gazebo_odom", 0, odomCallback);
   ros::spin();
-
 }
