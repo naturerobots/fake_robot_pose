@@ -51,7 +51,8 @@ int main(int argc, char** argv)
   const auto node_ptr = rclcpp::Node::make_shared("static_robot_pose");
   broadcaster_ptr = std::make_shared<tf2_ros::TransformBroadcaster>(*node_ptr);
   timer_ptr = node_ptr->create_wall_timer(0.1s, &publishTransform);
-  node_ptr->create_subscription<geometry_msgs::msg::PoseStamped>("goal", 100, meshGoalCallback);
+  const auto subscription =
+      node_ptr->create_subscription<geometry_msgs::msg::PoseStamped>("goal", 100, meshGoalCallback);
   rclcpp::spin(node_ptr);
   rclcpp::shutdown();
   return 0;
