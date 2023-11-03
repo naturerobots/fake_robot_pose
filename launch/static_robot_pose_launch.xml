@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
 <launch>
-  <node pkg="robot_pose" type="static_robot_pose" name="static_robot_pose" output="screen" />
+  <node pkg="robot_pose" exec="static_robot_pose" name="static_robot_pose" output="screen" />
 </launch>
