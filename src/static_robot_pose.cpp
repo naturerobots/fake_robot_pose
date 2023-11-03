@@ -1,50 +1,58 @@
-#include <ros/ros.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf2/convert.h>
-#include <tf2/transform_datatypes.h>
-#include <tf2/time_cache.h>
+#include <chrono>
+#include <memory>
+
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/transform_broadcaster.h>
-#include <boost/shared_ptr.hpp>
+#include <tf2/convert.h>
+#include <tf2/time_cache.h>
+#include <tf2/transform_datatypes.h>
 
-geometry_msgs::TransformStamped robot_pose;
-boost::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_ptr;
-ros::Timer timer;
-bool first_shot = true;
+using namespace std::chrono_literals;
 
-void meshGoalCallback(const geometry_msgs::PoseStamped::ConstPtr& goal_ptr)
+rclcpp::Node::SharedPtr node_ptr;
+geometry_msgs::msg::TransformStamped robot_pose;
+std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_ptr;
+rclcpp::TimerBase::SharedPtr timer_ptr;
+bool has_received_mesh_goal_pose = false;
+
+void meshGoalCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& goal_ptr)
 {
-  if (!first_shot)
+  if (has_received_mesh_goal_pose)
   {
     return;
   }
 
-  first_shot = false;
-  ROS_INFO("Got robot pose");
+  has_received_mesh_goal_pose = true;
+  RCLCPP_INFO(node_ptr->get_logger(), "Got robot pose");
 
   tf2::Stamped<tf2::Transform> robot_pose_tmp;
-  tf2::fromMsg(*goal_ptr, robot_pose_tmp);
+  tf2::fromMsg(*goal_ptr, robot_pose_tmp);  // TODO missing specialization? what to do here...
   robot_pose = tf2::toMsg(robot_pose_tmp);
+  tf2::fromMsg(goal_ptr->pose.position, robot_pose.transform.translation);
   robot_pose.child_frame_id = "base_footprint";
-  timer.start();
 }
 
-void publishTransform(const ros::TimerEvent& e)
+void publishTransform()
 {
-  robot_pose.header.stamp = ros::Time::now();
+  if (!has_received_mesh_goal_pose)
+  {
+    return;
+  }
+  robot_pose.header.stamp = node_ptr->get_clock()->now();
   broadcaster_ptr->sendTransform(robot_pose);
 }
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "static_robot_pose");
-  ros::NodeHandle nh;
-
-  tf2::Stamped<tf2::Transform> robot_pose_tmp;
-  robot_pose_tmp.setIdentity();
-
-  broadcaster_ptr = boost::make_shared<tf2_ros::TransformBroadcaster>();
-  ros::Subscriber mesh_pose = nh.subscribe("goal", 100, meshGoalCallback);
-  ros::Duration duration(0.1);
-  timer = nh.createTimer(duration, publishTransform, false, false);
-  ros::spin();
+  rclcpp::init(argc, argv);
+  const auto node_ptr = rclcpp::Node::make_shared("static_robot_pose");
+  broadcaster_ptr = std::make_shared<tf2_ros::TransformBroadcaster>(*node_ptr);
+  timer_ptr = node_ptr->create_wall_timer(0.1s, &publishTransform);
+  node_ptr->create_subscription<geometry_msgs::msg::PoseStamped>("goal", 100, meshGoalCallback);
+  rclcpp::spin(node_ptr);
+  rclcpp::shutdown();
+  return 0;
 }
