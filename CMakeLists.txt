@@ -12,12 +12,12 @@ find_package(nav_msgs REQUIRED)
 add_executable(static_robot_pose src/static_robot_pose.cpp)
 ament_target_dependencies(static_robot_pose rclcpp tf2 tf2_ros tf2_geometry_msgs geometry_msgs nav_msgs)
 
-add_executable(odom_robot_pose src/odom_robot_pose.cpp)
-ament_target_dependencies(odom_robot_pose rclcpp tf2 tf2_ros tf2_geometry_msgs geometry_msgs nav_msgs)
+#add_executable(odom_robot_pose src/odom_robot_pose.cpp)
+#ament_target_dependencies(odom_robot_pose rclcpp tf2 tf2_ros tf2_geometry_msgs geometry_msgs nav_msgs)
 
 install(TARGETS 
   static_robot_pose
-  odom_robot_pose
+#  odom_robot_pose
   DESTINATION lib/${PROJECT_NAME}
 )
 
