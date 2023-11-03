@@ -50,7 +50,7 @@ void publishTransform()
 int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
-  const auto node_ptr = rclcpp::Node::make_shared("static_robot_pose");
+  node_ptr = rclcpp::Node::make_shared("static_robot_pose");
   broadcaster_ptr = std::make_shared<tf2_ros::TransformBroadcaster>(*node_ptr);
   timer_ptr = node_ptr->create_wall_timer(0.1s, &publishTransform);
   const auto subscription =
