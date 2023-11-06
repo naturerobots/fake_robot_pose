@@ -1,5 +1,6 @@
 #include <chrono>
 #include <memory>
+#include <functional>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
@@ -11,51 +12,62 @@
 #include <tf2/transform_datatypes.h>
 
 using namespace std::chrono_literals;
+using std::placeholders::_1;
 
-rclcpp::Node::SharedPtr node_ptr;
-geometry_msgs::msg::TransformStamped robot_pose;
-std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_ptr;
-rclcpp::TimerBase::SharedPtr timer_ptr;
-bool has_received_mesh_goal_pose = false;
-
-void meshGoalCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& goal_ptr)
+class StaticRobotPose : public rclcpp::Node
 {
-  if (has_received_mesh_goal_pose)
+public:
+  StaticRobotPose()
+    : Node("static_robot_pose")
+    , broadcaster_(this)
+    , has_received_mesh_goal_pose_(false)
+    , timer_(create_wall_timer(0.1s, std::bind(&StaticRobotPose::publishTransform, this)))
   {
-    return;
+    subscription_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+        "goal", 100, std::bind(&StaticRobotPose::meshGoalCallback, this, _1));
   }
 
-  has_received_mesh_goal_pose = true;
-  RCLCPP_INFO(node_ptr->get_logger(), "Got robot pose");
-
-  robot_pose.header = goal_ptr->header;
-  robot_pose.transform.rotation = goal_ptr->pose.orientation;
-  robot_pose.transform.translation.x = goal_ptr->pose.position.x;
-  robot_pose.transform.translation.y = goal_ptr->pose.position.y;
-  robot_pose.transform.translation.z = goal_ptr->pose.position.z;
-  robot_pose.header = goal_ptr->header;
-  robot_pose.child_frame_id = "base_footprint";
-}
-
-void publishTransform()
-{
-  if (!has_received_mesh_goal_pose)
+private:
+  void meshGoalCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& goal_ptr)
   {
-    return;
+    if (has_received_mesh_goal_pose_)
+    {
+      return;
+    }
+
+    has_received_mesh_goal_pose_ = true;
+    RCLCPP_INFO(get_logger(), "Got robot pose");
+
+    robot_pose_.header = goal_ptr->header;
+    robot_pose_.transform.rotation = goal_ptr->pose.orientation;
+    robot_pose_.transform.translation.x = goal_ptr->pose.position.x;
+    robot_pose_.transform.translation.y = goal_ptr->pose.position.y;
+    robot_pose_.transform.translation.z = goal_ptr->pose.position.z;
+    robot_pose_.header = goal_ptr->header;
+    robot_pose_.child_frame_id = "base_footprint";
   }
-  robot_pose.header.stamp = node_ptr->get_clock()->now();
-  broadcaster_ptr->sendTransform(robot_pose);
-}
+
+  void publishTransform()
+  {
+    if (!has_received_mesh_goal_pose_)
+    {
+      return;
+    }
+    robot_pose_.header.stamp = get_clock()->now();
+    broadcaster_.sendTransform(robot_pose_);
+  }
+
+  geometry_msgs::msg::TransformStamped robot_pose_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
+  tf2_ros::TransformBroadcaster broadcaster_;
+  bool has_received_mesh_goal_pose_;
+  rclcpp::TimerBase::SharedPtr timer_;
+};
 
 int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
-  node_ptr = rclcpp::Node::make_shared("static_robot_pose");
-  broadcaster_ptr = std::make_shared<tf2_ros::TransformBroadcaster>(*node_ptr);
-  timer_ptr = node_ptr->create_wall_timer(0.1s, &publishTransform);
-  const auto subscription =
-      node_ptr->create_subscription<geometry_msgs::msg::PoseStamped>("goal", 100, meshGoalCallback);
-  rclcpp::spin(node_ptr);
+  rclcpp::spin(std::make_shared<StaticRobotPose>());
   rclcpp::shutdown();
   return 0;
 }
