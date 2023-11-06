@@ -26,7 +26,7 @@ void meshGoalCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& goa
   }
 
   has_received_mesh_goal_pose = true;
-  // RCLCPP_INFO(node_ptr->get_logger(), "Got robot pose"); TODO segfaults...
+  RCLCPP_INFO(node_ptr->get_logger(), "Got robot pose");
 
   robot_pose.header = goal_ptr->header;
   robot_pose.transform.rotation = goal_ptr->pose.orientation;
